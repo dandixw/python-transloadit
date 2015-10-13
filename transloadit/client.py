@@ -36,16 +36,30 @@ class Client(object):
             hashlib.sha1).hexdigest()
 
     def _send_request(self, files, **fields):
-        parts = urlparse.urlparse(self.api)
-        content_type, body = self._encode_request(fields, files)
-        req = httplib.HTTP(parts[1])
-        req.putrequest('POST', parts[2])
-        req.putheader('Content-Type', content_type)
-        req.putheader('Content-Length', str(len(body)))
-        req.endheaders()
-        req.send(body)
-        errcode, errmsg, headers = req.getreply()
-        return json.loads(req.file.read())
+        with open('/tmp/transloadit.debug.log', 'w+') as d:
+            d.write("Begin _send_request\n")
+            parts = urlparse.urlparse(self.api)
+            content_type, body = self._encode_request(fields, files)
+            req = httplib.HTTP(parts[1])
+            req.putrequest('POST', parts[2])
+            req.putheader('Content-Type', content_type)
+            req.putheader('Content-Length', str(len(body)))
+            req.endheaders()
+            req.send(body)
+            d.write("Sent body\n")
+            errcode, errmsg, headers = req.getreply()
+            d.write("Got Tuple\n")
+            d.write("%s\n" % errcode)
+            d.write("%s\n" % errmsg)
+            d.write("%s\n" % headers)
+
+            #####
+            resp = req.file.read()
+            temp = resp.split(CRLF)[1]
+            decoded_resp = json.loads(temp)
+            d.write(resp)
+            return decoded_resp
+            #return json.loads(req.file.read())
 
     def _encode_request(self, fields, files):
         body = StringIO()
